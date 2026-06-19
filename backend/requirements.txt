@@ -1,0 +1,17 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+httpx
+asyncpg
+psycopg2-binary
+langgraph
+langchain-groq
+langchain-core
+groq
+pydantic
+sse-starlette
+bcrypt
+python-jose[cryptography]
+python-multipart
+email-validator
+fastembed
