@@ -6,12 +6,13 @@ import Chat from "./chat";
 import Login from "./Login";
 import { IconMenu, IconClose } from "./Icons";
 import "./index.css";
-
+import Dashboard from "./Dashboard";
 export default function App() {
   const { user, loading, logout } = useAuth();
   const [activeChatId, setActiveChatId] = useState(null);
   const [chats, setChats] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [view, setView] = useState("chat");
 
   useEffect(() => {
     if (user) {
@@ -133,10 +134,14 @@ export default function App() {
         onRenameChat={handleRenameChat}
         onDeleteChat={handleDeleteChat}
         onLogout={logout}
+        onViewChange={setView}
+        currentView={view}
       />
 
       <main className="main-panel">
-        {activeChatId ? (
+        {view === "dashboard" ? (
+          <Dashboard onBack={() => setView("chat")} />
+        ) : activeChatId ? (
           <Chat
             key={activeChatId}
             chatId={activeChatId}

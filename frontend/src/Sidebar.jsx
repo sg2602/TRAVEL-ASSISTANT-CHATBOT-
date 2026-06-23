@@ -122,6 +122,8 @@ export default function Sidebar({
   onRenameChat,
   onDeleteChat,
   onLogout,
+  onViewChange,
+  currentView
 }) {
   const [preferences, setPreferences] = useState({});
   const [showPrefs, setShowPrefs] = useState(false);
@@ -214,6 +216,12 @@ export default function Sidebar({
         <span className="user-email">{userEmail}</span>
         <button className="btn-logout" onClick={onLogout}>
           Log out
+        </button>
+        <button
+          className={`analytics-btn ${currentView === "dashboard" ? "analytics-btn--active" : ""}`}
+          onClick={() => onViewChange(currentView === "dashboard" ? "chat" : "dashboard")}
+        >
+          📊 Analytics
         </button>
       </div>
     </aside>

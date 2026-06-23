@@ -273,3 +273,81 @@ async def debug_memory(chat_id: str, user: User = Depends(get_current_user)):
         "long_term_facts": [r["fact"] for r in fact_rows],
         "next_message_index": ctx.next_message_index,
     }
+
+# ── Observability endpoints ───────────────────────────────────────────────────
+@app.get("/usage/me/total")
+async def get_my_total_usage(user: User = Depends(get_current_user)):
+    pool = await get_pool()
+    row = await pool.fetchrow(
+        """
+        SELECT 
+            COALESCE(SUM(input_tokens), 0) as total_input,
+            COALESCE(SUM(output_tokens), 0) as total_output,
+            COALESCE(SUM(total_tokens), 0) as total_tokens,
+            COUNT(*) as total_calls
+        FROM llm_usage WHERE user_id = $1
+        """,
+        user.id,
+    )
+    return dict(row)
+
+
+@app.get("/usage/me/daily")
+async def get_my_daily_usage(user: User = Depends(get_current_user)):
+    pool = await get_pool()
+    rows = await pool.fetch(
+        """
+        SELECT 
+            DATE(created_at) as date,
+            COALESCE(SUM(input_tokens), 0) as input_tokens,
+            COALESCE(SUM(output_tokens), 0) as output_tokens,
+            COALESCE(SUM(total_tokens), 0) as total_tokens,
+            COUNT(*) as calls
+        FROM llm_usage
+        WHERE user_id = $1
+        AND created_at >= NOW() - INTERVAL '30 days'
+        GROUP BY DATE(created_at)
+        ORDER BY date DESC
+        """,
+        user.id,
+    )
+    return [dict(r) for r in rows]
+
+
+@app.get("/usage/me/by-chat")
+async def get_usage_by_chat(user: User = Depends(get_current_user)):
+    pool = await get_pool()
+    rows = await pool.fetch(
+        """
+        SELECT 
+            u.chat_id,
+            c.title,
+            COALESCE(SUM(u.total_tokens), 0) as total_tokens,
+            COUNT(*) as calls,
+            MAX(u.created_at) as last_used
+        FROM llm_usage u
+        LEFT JOIN chats c ON c.chat_id = u.chat_id
+        WHERE u.user_id = $1
+        GROUP BY u.chat_id, c.title
+        ORDER BY last_used DESC
+        LIMIT 10
+        """,
+        user.id,
+    )
+    return [dict(r) for r in rows]
+
+
+@app.get("/debug/errors")
+async def get_errors(user: User = Depends(get_current_user)):
+    pool = await get_pool()
+    rows = await pool.fetch(
+        """
+        SELECT error_type, error_msg, chat_id, created_at
+        FROM error_logs
+        WHERE user_id = $1
+        ORDER BY created_at DESC
+        LIMIT 20
+        """,
+        user.id,
+    )
+    return [dict(r) for r in rows]

@@ -67,6 +67,7 @@ _llm = ChatGroq(
     model="meta-llama/llama-4-scout-17b-16e-instruct",
     groq_api_key=os.environ["GROQ_API_KEY"],
     streaming=True,
+    temperature=0.3,
     max_tokens=2048,
     model_kwargs={"parallel_tool_calls": False},
 )
@@ -143,7 +144,7 @@ async def run_agent_streaming(
         await create_chat(user_id, chat_id)
     ctx = await load_memory(user_id, chat_id)
     
-    facts = await get_relevant_facts(user_id, user_input, top_k=5)
+    facts = await get_relevant_facts(user_id, user_input, top_k=8)
     trimmed_summary = ctx.chat_summary
     trimmed_messages = ctx.recent_messages
 

@@ -79,3 +79,16 @@ CREATE TABLE IF NOT EXISTS user_facts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_facts_user ON user_facts(user_id);
+
+CREATE TABLE IF NOT EXISTS llm_usage (
+    id              SERIAL PRIMARY KEY,
+    user_id         TEXT NOT NULL,
+    chat_id         TEXT NOT NULL,
+    input_tokens    INTEGER DEFAULT 0,
+    output_tokens   INTEGER DEFAULT 0,
+    total_tokens    INTEGER DEFAULT 0,
+    model           TEXT,
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_llm_usage_user ON llm_usage(user_id);

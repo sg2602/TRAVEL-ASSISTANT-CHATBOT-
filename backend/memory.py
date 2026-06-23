@@ -56,8 +56,8 @@ async def save_user_fact(user_id: str, fact: str) -> None:
 async def get_relevant_facts(
     user_id: str,
     query: str,
-    top_k: int = 5,
-    max_distance: float = 0.55,
+    top_k: int = 8,
+    max_distance: float = 0.7,
 ) -> list[str]:
     """Find top-K facts semantically relevant to the query."""
     pool = await get_pool()
@@ -75,7 +75,12 @@ async def get_relevant_facts(
         """,
         user_id, embedding_str, max_distance, top_k,
     )
+    print(f"[FACTS] query='{query[:50]}' threshold={max_distance} found={len(rows)}")
+    for r in rows:
+        print(f"  {r['distance']:.3f} — {r['fact']}")
+    
     return [r["fact"] for r in rows]
+
 
 
 def _cosine_distance(a: list[float], b: list[float]) -> float:
@@ -413,13 +418,17 @@ async def extract_and_save_preferences(user_id: str, chat_id: str) -> None:
         return
 
     prompt = (
-        "Extract durable travel preferences from this conversation. "
-        "Return a JSON object with string keys and values. "
-        "Keys should be short preference names like: budget, diet, travel_style, preferred_climate, "
-        "home_city, interests, accommodation_type, travel_companions. "
-        "Only include preferences that are clearly stated or strongly implied. "
-        "Return ONLY valid JSON, no markdown, no explanation.\n\n"
+        
+        "Extract ONLY durable personal preferences about this user from the conversation. "
+        "These are facts that remain true across ALL trips, not trip-specific actions. "
+        "Good examples: 'User is vegetarian', 'User prefers budget accommodation', 'User loves museums', 'User has a budget of $500'. "
+        "BAD examples (do NOT include): 'User wants to visit Tokyo', 'User asked about Paris restaurants', 'User is interested in Tokyo weather'. "
+        "Only extract facts about the USER'S IDENTITY AND PREFERENCES, not their current trip plans. "
+        "Return a JSON array of max 3 short fact strings. "
+        "If no durable preferences are found, return an empty array []. "
+        "Return ONLY a valid JSON array, no markdown, no explanation.\n\n"
         + context
+   
     )
 
     client = AsyncGroq(api_key=os.environ["GROQ_API_KEY"])
